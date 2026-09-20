@@ -11,16 +11,21 @@
   <input type="text" id="itemInput" placeholder="何を買う？">
   <button id="addButton">リストに追加！</button>
 
-  <!-- 買いたいものが並ぶ棚 -->
+  <!-- 買いたいものが並ぶ棚（見出しをつけました！） -->
+  <h2>これから買うもの🛒</h2>
   <ul id="wantList"></ul>
+
+  <!-- 新しく追加！買ったものが並ぶ棚 -->
+  <h2>もう買ったもの✨</h2>
+  <ul id="boughtList"></ul>
 
   <!-- ↓ここから下が「保管庫と通信する魔法」です！↓ -->
   <script type="module">
-    // 1. Firebaseのエンジンと、今回は「ノートを見張る魔法（onSnapshot）」を追加で準備します！
+    // 1. 今回は付箋を「はがす（deleteDoc）」と「場所を指定する（doc）」魔法を追加しました！
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
-    // 2. あなたの保管庫の合い鍵
+    // あなたの保管庫の合い鍵（そのままです！）
     const firebaseConfig = {
       apiKey: "AIzaSyCu1fY1gC6QlBrtB4n-jxZCRreD81xwKq4",
       authDomain: "kaimono-app-1fb70.firebaseapp.com",
@@ -30,45 +35,68 @@
       appId: "1:340367566014:web:127208a9b4ef5ae74f6aef"
     };
 
-    // 3. アプリと保管庫を接続！
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 4. 画面のボタンや棚を見つけて準備
     const button = document.getElementById("addButton");
     const input = document.getElementById("itemInput");
     const list = document.getElementById("wantList");
+    const boughtList = document.getElementById("boughtList"); // 新しい棚を準備！
 
-    // ★今回の新しい魔法：ノートを24時間見張るカメラ（onSnapshot）！★
-    // アプリを開いた時や、ノートに新しい書き込みがあった瞬間に、自動でここが動きます。
+    // ★これから買うものを見張るカメラ★
     onSnapshot(collection(db, "wantItems"), (snapshot) => {
-      
-      // まず、今画面にある棚を一度「空っぽ」にして綺麗にお掃除します
-      list.innerHTML = "";
+      list.innerHTML = ""; // 一度お掃除
 
-      // ノートの中にある「付箋」を1枚ずつ取り出して、画面の棚に貼っていく作業
-      snapshot.forEach((doc) => {
-        const data = doc.data(); // 付箋に書かれた文字を取り出す
-        
-        const newItem = document.createElement("li"); // 新しい画面用の付箋を作る
-        newItem.textContent = data.name; // 文字を書き込む
-        list.appendChild(newItem); // 画面の棚に貼る！
+      snapshot.forEach((documentSnapshot) => {
+        const data = documentSnapshot.data();
+        const noteId = documentSnapshot.id; // 付箋の裏に書かれた「背番号」！
+
+        const newItem = document.createElement("li");
+        newItem.textContent = data.name + " "; 
+
+        // 新しい魔法：「買いました！」ボタンを作る
+        const buyButton = document.createElement("button");
+        buyButton.textContent = "買いました！👏";
+
+        // 「買いました！」ボタンがカチッと押された時の動き
+        buyButton.addEventListener("click", async function() {
+          
+          // ① 新しい「買ったものノート（boughtItems）」に書き写す
+          await addDoc(collection(db, "boughtItems"), {
+            name: data.name
+          });
+
+          // ② 古い「これから買うものノート（wantItems）」から、背番号を指定してはがす
+          await deleteDoc(doc(db, "wantItems", noteId));
+          
+        });
+
+        // 付箋にボタンをくっつけて、棚に貼る
+        newItem.appendChild(buyButton);
+        list.appendChild(newItem);
       });
-      
     });
 
-    // 5. ボタンが「カチッ」と押されたら…
+    // ★もう買ったものを見張るカメラ（新しく追加！）★
+    onSnapshot(collection(db, "boughtItems"), (snapshot) => {
+      boughtList.innerHTML = ""; // お掃除
+
+      snapshot.forEach((documentSnapshot) => {
+        const data = documentSnapshot.data();
+        const newItem = document.createElement("li");
+        
+        // 買った印のチェックマークをつけて並べる！
+        newItem.textContent = "✅ " + data.name; 
+        boughtList.appendChild(newItem);
+      });
+    });
+
+    // リストに追加ボタンの動き（前回と全く同じです）
     button.addEventListener("click", async function() {
       const text = input.value;
-      if (text === "") { return; } // 空っぽなら何もしない
-
+      if (text === "") { return; }
       try {
-        // クラウドのノートに書き込む！（書き込むと、上の「見張るカメラ」が自動で気づいて画面を更新してくれます）
-        await addDoc(collection(db, "wantItems"), {
-          name: text
-        });
-        
-        // 入力枠をお掃除
+        await addDoc(collection(db, "wantItems"), { name: text });
         input.value = "";
       } catch (error) {
         alert("保存に失敗しちゃいました…。");
