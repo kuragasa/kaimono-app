@@ -2,23 +2,22 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <!-- ★ここが新しく追加した「スマホ専用レンズ」の魔法です！★ -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
   <title>買いたいものアプリ</title>
   
   <style>
+    /* ＝＝＝ ↓お化粧（CSS）のルールブック↓ ＝＝＝ */
     body {
       background-color: #fff9f5; 
       color: #555555; 
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-      padding: 15px; /* スマホ向けに少し余白を調整 */
+      padding: 15px; 
       max-width: 500px; 
       margin: 0 auto; 
     }
 
     h1 {
-      font-size: 24px; /* タイトルを少し大きく */
+      font-size: 24px; 
       text-align: center; 
       color: #ff9a9e; 
       border-bottom: 2px dashed #ff9a9e; 
@@ -26,7 +25,7 @@
     }
 
     .heading-summary {
-      font-size: 20px; /* 見出しも少し大きく */
+      font-size: 20px; 
       color: #a18cd1;
       margin-top: 25px;
       margin-bottom: 10px;
@@ -37,14 +36,13 @@
     }
 
     .photo-summary {
-      font-size: 15px; /* 写真の取っ手も少し大きく */
+      font-size: 15px; 
       color: #ffb199;
       cursor: pointer;
       margin-top: 10px;
       font-weight: bold;
     }
 
-    /* 指でタップしやすいように、入力枠を少し大きくしました */
     input[type="text"] {
       width: 60%;
       padding: 12px;
@@ -54,7 +52,7 @@
       font-size: 16px; 
     }
 
-    /* ボタンも押しやすく、少しふっくらさせました */
+    /* いつもの「買いました！」ボタン */
     button {
       background-color: #ffb199; 
       color: white; 
@@ -65,9 +63,16 @@
       font-weight: bold; 
       box-shadow: 0px 4px 0px #f0957d; 
       cursor: pointer; 
-      margin-left: 5px;
+      margin-right: 5px; /* 右側に少し隙間を空けます */
+      margin-bottom: 5px;
     }
     
+    /* ★新しく追加！「ゴミ箱ボタン」のお化粧★ */
+    .delete-btn {
+      background-color: #ff7b7b; /* わかりやすく少し赤い色にしました */
+      box-shadow: 0px 4px 0px #d46363; 
+    }
+
     button:active {
       transform: translateY(4px);
       box-shadow: none;
@@ -78,7 +83,6 @@
       padding: 0;
     }
     
-    /* リストの文字も少し大きく見やすく */
     li {
       background-color: white; 
       padding: 18px 15px;
@@ -86,11 +90,11 @@
       border-radius: 12px; 
       box-shadow: 0px 2px 5px rgba(0,0,0,0.05); 
       font-size: 16px; 
-      line-height: 1.5; /* 文字の縦の間隔を少し開けて読みやすく */
+      line-height: 1.5; 
     }
 
     .item-image {
-      max-width: 100%; /* スマホの画面幅に合わせて写真を大きく見せる！ */
+      max-width: 100%; 
       height: auto;
       display: block;
       margin-top: 10px;
@@ -145,6 +149,7 @@
     let currentTargetName = "";
     let currentTargetId = "";
 
+    // ★これから買うものを見張るカメラ★
     onSnapshot(collection(db, "wantItems"), (snapshot) => {
       list.innerHTML = ""; 
 
@@ -154,28 +159,42 @@
 
         const newItem = document.createElement("li");
         
-        // 文字とボタンの間を少し開けて、スマホで押し間違いを防ぎます
         const textSpan = document.createElement("span");
         textSpan.textContent = data.name;
-        textSpan.style.display = "block"; // 文字を上の行に
-        textSpan.style.marginBottom = "10px"; // ボタンとの間に隙間を作る
-        textSpan.style.fontWeight = "bold"; // 買うものの名前を少し太く
+        textSpan.style.display = "block"; 
+        textSpan.style.marginBottom = "10px"; 
+        textSpan.style.fontWeight = "bold"; 
         newItem.appendChild(textSpan);
 
+        // 「買いました！📸」ボタン
         const buyButton = document.createElement("button");
         buyButton.textContent = "買いました！📸";
-
         buyButton.addEventListener("click", function() {
           currentTargetName = data.name; 
           currentTargetId = noteId;      
           cameraInput.click(); 
         });
 
+        // ★新しい魔法！「ゴミ箱」ボタンを作ります★
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "削除🗑️";
+        deleteButton.className = "delete-btn"; // 赤くするお化粧を適用
+        
+        // ゴミ箱が押されたら、ノートから完全に剥がして捨てる！
+        deleteButton.addEventListener("click", async function() {
+          const ok = confirm(data.name + " をリストから消してもいいですか？");
+          if (ok) {
+            await deleteDoc(doc(db, "wantItems", noteId));
+          }
+        });
+
         newItem.appendChild(buyButton);
+        newItem.appendChild(deleteButton); // ゴミ箱ボタンも棚に並べる
         list.appendChild(newItem);
       });
     });
 
+    // 隠しカメラの魔法（今までと同じです！）
     cameraInput.addEventListener("change", function(event) {
       const file = event.target.files[0];
       if (!file) return; 
@@ -186,7 +205,7 @@
         img.onload = async function() {
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
-          const MAX_WIDTH = 400; // スマホでより綺麗に見えるように少し画質を上げました
+          const MAX_WIDTH = 400; 
           const scaleSize = MAX_WIDTH / img.width;
           canvas.width = MAX_WIDTH;
           canvas.height = img.height * scaleSize;
@@ -210,11 +229,14 @@
       reader.readAsDataURL(file);
     });
 
+    // ★もう買ったものを見張るカメラ★
     onSnapshot(collection(db, "boughtItems"), (snapshot) => {
       boughtList.innerHTML = ""; 
 
       snapshot.forEach((documentSnapshot) => {
         const data = documentSnapshot.data();
+        const noteId = documentSnapshot.id; // ★買ったものの背番号も取り出す
+
         const newItem = document.createElement("li");
         
         const textSpan = document.createElement("div");
@@ -224,7 +246,6 @@
         
         if (data.image) {
           const detailsBox = document.createElement("details");
-          
           const photoSummary = document.createElement("summary");
           photoSummary.textContent = "写真を見る📷";
           photoSummary.className = "photo-summary";
@@ -237,11 +258,26 @@
           detailsBox.appendChild(imgElement);
           newItem.appendChild(detailsBox);
         }
+
+        // ★購入済みのリストにも、履歴から消せるゴミ箱ボタンを追加！★
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "削除🗑️";
+        deleteButton.className = "delete-btn";
+        deleteButton.style.marginTop = "10px"; // 上の写真などと少し隙間を開ける
         
+        deleteButton.addEventListener("click", async function() {
+          const ok = confirm("この履歴を完全に消してもいいですか？");
+          if (ok) {
+            await deleteDoc(doc(db, "boughtItems", noteId));
+          }
+        });
+        
+        newItem.appendChild(deleteButton);
         boughtList.appendChild(newItem);
       });
     });
 
+    // リストに追加ボタン
     button.addEventListener("click", async function() {
       const text = input.value;
       if (text === "") { return; }
