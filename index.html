@@ -11,23 +11,42 @@
   <input type="text" id="itemInput" placeholder="何を買う？">
   <button id="addButton">リストに追加！</button>
 
+  <!-- 買いたいものが並ぶ棚 -->
   <ul id="wantList">
   </ul>
 
-  <!-- ↓ここから下が「動かすための魔法（JavaScript）」です！↓ -->
+  <!-- ↓動かすための魔法（JavaScript）↓ -->
   <script>
-    // 1. 「リストに追加！」ボタンを画面の中から見つけて、準備する
+    // 1. 使うものを画面の中から見つけて準備する
     const button = document.getElementById("addButton");
+    const input = document.getElementById("itemInput"); // 入力する枠
+    const list = document.getElementById("wantList");   // 並べる棚
 
-    // 2. ボタンが「カチッ」とクリックされたら、この中の指示を実行してね！
+    // 2. ボタンが「カチッ」と押されたら、以下の指示を実行してね！
     button.addEventListener("click", function() {
       
-      // 3. 画面に「押されたよ！」という小さなメッセージ（ポップアップ）を出す
-      alert("ボタンが押されました！アプリが動いてます！");
+      // 3. 入力枠に書かれた「文字」を取り出す
+      const text = input.value;
+      
+      // （もし文字が空っぽのままボタンが押されたら、何もしないでストップ！）
+      if (text === "") {
+        return;
+      }
+      
+      // 4. 新しい「付箋（リストの項目）」を1枚作る
+      const newItem = document.createElement("li");
+      
+      // 5. その付箋に、さっき取り出した「文字」を書き込む
+      newItem.textContent = text;
+      
+      // 6. 出来上がった付箋を、「棚」にペタッと貼る
+      list.appendChild(newItem);
+      
+      // 7. 次の入力がしやすいように、入力枠の中身を消してお掃除する
+      input.value = "";
       
     });
   </script>
-  <!-- ↑魔法はここまで！↑ -->
 
 </body>
 </html>
