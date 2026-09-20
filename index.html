@@ -6,7 +6,7 @@
   <title>買いたいものアプリ</title>
   
   <style>
-    /* ＝＝＝ ↓お化粧（CSS）のルールブック↓ ＝＝＝ */
+    /* ＝＝＝ ↓お化粧（CSS）のルールブック（前回と同じです）↓ ＝＝＝ */
     body {
       background-color: #fff9f5; 
       color: #555555; 
@@ -52,7 +52,6 @@
       font-size: 16px; 
     }
 
-    /* いつもの「買いました！」ボタン */
     button {
       background-color: #ffb199; 
       color: white; 
@@ -63,13 +62,12 @@
       font-weight: bold; 
       box-shadow: 0px 4px 0px #f0957d; 
       cursor: pointer; 
-      margin-right: 5px; /* 右側に少し隙間を空けます */
+      margin-right: 5px;
       margin-bottom: 5px;
     }
     
-    /* ★新しく追加！「ゴミ箱ボタン」のお化粧★ */
     .delete-btn {
-      background-color: #ff7b7b; /* わかりやすく少し赤い色にしました */
+      background-color: #ff7b7b; 
       box-shadow: 0px 4px 0px #d46363; 
     }
 
@@ -169,18 +167,36 @@
         // 「買いました！📸」ボタン
         const buyButton = document.createElement("button");
         buyButton.textContent = "買いました！📸";
-        buyButton.addEventListener("click", function() {
+        
+        // ★ここが新しくなりました！店員さんのように質問します★
+        buyButton.addEventListener("click", async function() {
           currentTargetName = data.name; 
           currentTargetId = noteId;      
-          cameraInput.click(); 
+          
+          // レジの店員さんのように確認画面を出します！
+          const wantPhoto = confirm("「" + data.name + "」を買ったんですね！🎉\n一緒に写真も保存しますか？\n\n【OK】写真を撮る📷\n【キャンセル】写真なしで移動✨");
+
+          if (wantPhoto) {
+            // 「OK」が押されたら、今まで通りカメラを起動！
+            cameraInput.click(); 
+          } else {
+            // 「キャンセル」が押されたら、写真なしですぐにお引っ越し！
+            try {
+              await addDoc(collection(db, "boughtItems"), {
+                name: currentTargetName // ← 写真（image）は付けずに名前だけ保存
+              });
+              await deleteDoc(doc(db, "wantItems", currentTargetId)); // 古いリストからはがす
+            } catch (error) {
+              alert("保存に失敗しちゃいました…。");
+            }
+          }
         });
 
-        // ★新しい魔法！「ゴミ箱」ボタンを作ります★
+        // ゴミ箱ボタン（前回作ったものです！）
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "削除🗑️";
-        deleteButton.className = "delete-btn"; // 赤くするお化粧を適用
+        deleteButton.className = "delete-btn"; 
         
-        // ゴミ箱が押されたら、ノートから完全に剥がして捨てる！
         deleteButton.addEventListener("click", async function() {
           const ok = confirm(data.name + " をリストから消してもいいですか？");
           if (ok) {
@@ -189,12 +205,12 @@
         });
 
         newItem.appendChild(buyButton);
-        newItem.appendChild(deleteButton); // ゴミ箱ボタンも棚に並べる
+        newItem.appendChild(deleteButton); 
         list.appendChild(newItem);
       });
     });
 
-    // 隠しカメラの魔法（今までと同じです！）
+    // 隠しカメラで写真が選ばれた時の魔法
     cameraInput.addEventListener("change", function(event) {
       const file = event.target.files[0];
       if (!file) return; 
@@ -235,7 +251,7 @@
 
       snapshot.forEach((documentSnapshot) => {
         const data = documentSnapshot.data();
-        const noteId = documentSnapshot.id; // ★買ったものの背番号も取り出す
+        const noteId = documentSnapshot.id; 
 
         const newItem = document.createElement("li");
         
@@ -244,6 +260,7 @@
         textSpan.style.fontWeight = "bold";
         newItem.appendChild(textSpan);
         
+        // もし写真（シール）が貼ってあったらだけ、写真の引き出しを作る！
         if (data.image) {
           const detailsBox = document.createElement("details");
           const photoSummary = document.createElement("summary");
@@ -259,11 +276,11 @@
           newItem.appendChild(detailsBox);
         }
 
-        // ★購入済みのリストにも、履歴から消せるゴミ箱ボタンを追加！★
+        // 購入済みのリストのゴミ箱ボタン
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "削除🗑️";
         deleteButton.className = "delete-btn";
-        deleteButton.style.marginTop = "10px"; // 上の写真などと少し隙間を開ける
+        deleteButton.style.marginTop = "10px"; 
         
         deleteButton.addEventListener("click", async function() {
           const ok = confirm("この履歴を完全に消してもいいですか？");
