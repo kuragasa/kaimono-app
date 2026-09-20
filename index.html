@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>買いたいものアプリ</title>
+  <style>
+    /* 写真をきれいに表示するための少しのお化粧（CSS）です */
+    .item-image {
+      max-width: 150px;
+      display: block;
+      margin-top: 5px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
 
@@ -11,21 +20,20 @@
   <input type="text" id="itemInput" placeholder="何を買う？">
   <button id="addButton">リストに追加！</button>
 
-  <!-- 買いたいものが並ぶ棚（見出しをつけました！） -->
+  <!-- ↓画面には見えない、隠しカメラボタンです！↓ -->
+  <input type="file" accept="image/*" id="cameraInput" style="display: none;">
+
   <h2>これから買うもの🛒</h2>
   <ul id="wantList"></ul>
 
-  <!-- 新しく追加！買ったものが並ぶ棚 -->
   <h2>もう買ったもの✨</h2>
   <ul id="boughtList"></ul>
 
-  <!-- ↓ここから下が「保管庫と通信する魔法」です！↓ -->
   <script type="module">
-    // 1. 今回は付箋を「はがす（deleteDoc）」と「場所を指定する（doc）」魔法を追加しました！
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
-    // あなたの保管庫の合い鍵（そのままです！）
+    // あなたの保管庫の合い鍵
     const firebaseConfig = {
       apiKey: "AIzaSyCu1fY1gC6QlBrtB4n-jxZCRreD81xwKq4",
       authDomain: "kaimono-app-1fb70.firebaseapp.com",
@@ -41,57 +49,105 @@
     const button = document.getElementById("addButton");
     const input = document.getElementById("itemInput");
     const list = document.getElementById("wantList");
-    const boughtList = document.getElementById("boughtList"); // 新しい棚を準備！
+    const boughtList = document.getElementById("boughtList");
+    const cameraInput = document.getElementById("cameraInput"); // 隠しカメラ
+
+    // いま「買いました！」を押したアイテムを覚えておくためのメモ帳
+    let currentTargetName = "";
+    let currentTargetId = "";
 
     // ★これから買うものを見張るカメラ★
     onSnapshot(collection(db, "wantItems"), (snapshot) => {
-      list.innerHTML = ""; // 一度お掃除
+      list.innerHTML = ""; 
 
       snapshot.forEach((documentSnapshot) => {
         const data = documentSnapshot.data();
-        const noteId = documentSnapshot.id; // 付箋の裏に書かれた「背番号」！
+        const noteId = documentSnapshot.id; 
 
         const newItem = document.createElement("li");
         newItem.textContent = data.name + " "; 
 
-        // 新しい魔法：「買いました！」ボタンを作る
         const buyButton = document.createElement("button");
-        buyButton.textContent = "買いました！👏";
+        buyButton.textContent = "買いました！📸";
 
-        // 「買いました！」ボタンがカチッと押された時の動き
-        buyButton.addEventListener("click", async function() {
+        // 「買いました！」が押されたら…
+        buyButton.addEventListener("click", function() {
+          currentTargetName = data.name; // 名前を覚えておく
+          currentTargetId = noteId;      // 背番号を覚えておく
           
-          // ① 新しい「買ったものノート（boughtItems）」に書き写す
-          await addDoc(collection(db, "boughtItems"), {
-            name: data.name
-          });
-
-          // ② 古い「これから買うものノート（wantItems）」から、背番号を指定してはがす
-          await deleteDoc(doc(db, "wantItems", noteId));
-          
+          // 裏に隠してあるカメラボタンをこっそり押す魔法！
+          // （これでスマホのカメラや写真選び画面が開きます）
+          cameraInput.click(); 
         });
 
-        // 付箋にボタンをくっつけて、棚に貼る
         newItem.appendChild(buyButton);
         list.appendChild(newItem);
       });
     });
 
-    // ★もう買ったものを見張るカメラ（新しく追加！）★
+    // ★隠しカメラで写真が選ばれた時の動き（ここが魔法の縮小マシンです！）★
+    cameraInput.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (!file) return; // キャンセルされたら何もしない
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = async function() {
+          // 画用紙（キャンバス）を用意して、写真を小さなサイズで書き写す
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          const MAX_WIDTH = 300; // このサイズにギュッと縮小します
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          // 小さくなった写真を「文字の暗号（シール）」に変換！
+          const base64Image = canvas.toDataURL("image/jpeg", 0.7);
+
+          try {
+            // 買ったものノートに「名前」と「写真の暗号」を保存
+            await addDoc(collection(db, "boughtItems"), {
+              name: currentTargetName,
+              image: base64Image
+            });
+            // 古いノートからはがす
+            await deleteDoc(doc(db, "wantItems", currentTargetId));
+            
+            // 次のためにカメラをリセット
+            cameraInput.value = "";
+          } catch (error) {
+            alert("写真の保存に失敗しました…");
+          }
+        }
+        img.src = e.target.result;
+      }
+      reader.readAsDataURL(file);
+    });
+
+    // ★もう買ったものを見張るカメラ★
     onSnapshot(collection(db, "boughtItems"), (snapshot) => {
-      boughtList.innerHTML = ""; // お掃除
+      boughtList.innerHTML = ""; 
 
       snapshot.forEach((documentSnapshot) => {
         const data = documentSnapshot.data();
         const newItem = document.createElement("li");
-        
-        // 買った印のチェックマークをつけて並べる！
         newItem.textContent = "✅ " + data.name; 
+        
+        // もし写真（シール）が貼ってあったら、画像として表示する魔法！
+        if (data.image) {
+          const imgElement = document.createElement("img");
+          imgElement.src = data.image; // 暗号を画像に戻す
+          imgElement.className = "item-image"; // 少しお化粧
+          newItem.appendChild(imgElement);
+        }
+        
         boughtList.appendChild(newItem);
       });
     });
 
-    // リストに追加ボタンの動き（前回と全く同じです）
+    // リストに追加ボタン
     button.addEventListener("click", async function() {
       const text = input.value;
       if (text === "") { return; }
