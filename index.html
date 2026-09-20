@@ -2,64 +2,66 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <!-- ★ここが新しく追加した「スマホ専用レンズ」の魔法です！★ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <title>買いたいものアプリ</title>
   
   <style>
-    /* ＝＝＝ ↓お化粧（CSS）のルールブック↓ ＝＝＝ */
     body {
       background-color: #fff9f5; 
       color: #555555; 
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-      padding: 20px; 
+      padding: 15px; /* スマホ向けに少し余白を調整 */
       max-width: 500px; 
       margin: 0 auto; 
     }
 
     h1 {
-      font-size: 22px;
+      font-size: 24px; /* タイトルを少し大きく */
       text-align: center; 
       color: #ff9a9e; 
       border-bottom: 2px dashed #ff9a9e; 
       padding-bottom: 10px;
     }
 
-    /* 新しい魔法！引き出しの「取っ手（見出し）」のお化粧 */
     .heading-summary {
-      font-size: 18px;
+      font-size: 20px; /* 見出しも少し大きく */
       color: #a18cd1;
-      margin-top: 20px;
+      margin-top: 25px;
       margin-bottom: 10px;
-      cursor: pointer; /* 押せるよ！という指マークにする */
+      cursor: pointer; 
       font-weight: bold;
-      border-bottom: 2px dashed #e8dff5; /* 可愛い点線を引く */
+      border-bottom: 2px dashed #e8dff5; 
       padding-bottom: 5px;
     }
 
-    /* 写真用の小さな「取っ手」のお化粧 */
     .photo-summary {
-      font-size: 13px;
+      font-size: 15px; /* 写真の取っ手も少し大きく */
       color: #ffb199;
       cursor: pointer;
-      margin-top: 8px;
+      margin-top: 10px;
       font-weight: bold;
     }
 
+    /* 指でタップしやすいように、入力枠を少し大きくしました */
     input[type="text"] {
-      width: 55%;
-      padding: 10px;
+      width: 60%;
+      padding: 12px;
       border: 2px solid #fbc2eb; 
       border-radius: 20px; 
       outline: none; 
-      font-size: 16px;
+      font-size: 16px; 
     }
 
+    /* ボタンも押しやすく、少しふっくらさせました */
     button {
       background-color: #ffb199; 
       color: white; 
       border: none; 
-      padding: 10px 15px;
+      padding: 12px 18px;
       border-radius: 20px; 
-      font-size: 14px;
+      font-size: 15px;
       font-weight: bold; 
       box-shadow: 0px 4px 0px #f0957d; 
       cursor: pointer; 
@@ -75,18 +77,23 @@
       list-style-type: none; 
       padding: 0;
     }
+    
+    /* リストの文字も少し大きく見やすく */
     li {
       background-color: white; 
-      padding: 15px;
-      margin-bottom: 10px;
+      padding: 18px 15px;
+      margin-bottom: 12px;
       border-radius: 12px; 
       box-shadow: 0px 2px 5px rgba(0,0,0,0.05); 
+      font-size: 16px; 
+      line-height: 1.5; /* 文字の縦の間隔を少し開けて読みやすく */
     }
 
     .item-image {
-      max-width: 150px; 
+      max-width: 100%; /* スマホの画面幅に合わせて写真を大きく見せる！ */
+      height: auto;
       display: block;
-      margin-top: 5px;
+      margin-top: 10px;
       border-radius: 8px; 
     }
   </style>
@@ -96,21 +103,18 @@
 
   <h1>私の買いたいものリスト📝</h1>
   
-  <div style="text-align: center; margin-bottom: 20px;">
+  <div style="text-align: center; margin-bottom: 25px;">
     <input type="text" id="itemInput" placeholder="何を買う？">
     <button id="addButton">追加！</button>
   </div>
 
   <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display: none;">
 
-  <!-- ↓ここが変わりました！開け閉めできる「引き出し」の箱（details）です↓ -->
-  <!-- open をつけると、最初から開いた状態になります -->
   <details open>
     <summary class="heading-summary">買うものリスト🛒</summary>
     <ul id="wantList"></ul>
   </details>
 
-  <!-- こちらは最初閉じておいて、押したら開くようにしました -->
   <details>
     <summary class="heading-summary">購入済み✨</summary>
     <ul id="boughtList"></ul>
@@ -150,9 +154,12 @@
 
         const newItem = document.createElement("li");
         
+        // 文字とボタンの間を少し開けて、スマホで押し間違いを防ぎます
         const textSpan = document.createElement("span");
         textSpan.textContent = data.name;
-        textSpan.style.marginRight = "10px";
+        textSpan.style.display = "block"; // 文字を上の行に
+        textSpan.style.marginBottom = "10px"; // ボタンとの間に隙間を作る
+        textSpan.style.fontWeight = "bold"; // 買うものの名前を少し太く
         newItem.appendChild(textSpan);
 
         const buyButton = document.createElement("button");
@@ -179,7 +186,7 @@
         img.onload = async function() {
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
-          const MAX_WIDTH = 300; 
+          const MAX_WIDTH = 400; // スマホでより綺麗に見えるように少し画質を上げました
           const scaleSize = MAX_WIDTH / img.width;
           canvas.width = MAX_WIDTH;
           canvas.height = img.height * scaleSize;
@@ -212,24 +219,20 @@
         
         const textSpan = document.createElement("div");
         textSpan.textContent = "✅ " + data.name;
+        textSpan.style.fontWeight = "bold";
         newItem.appendChild(textSpan);
         
-        // ★ここが写真の引き出し魔法です！★
         if (data.image) {
-          // 写真用の小さな引き出し（箱）を作る
           const detailsBox = document.createElement("details");
           
-          // 「写真を見る📷」という取っ手を作る
           const photoSummary = document.createElement("summary");
           photoSummary.textContent = "写真を見る📷";
           photoSummary.className = "photo-summary";
           
-          // 写真そのもの
           const imgElement = document.createElement("img");
           imgElement.src = data.image; 
           imgElement.className = "item-image"; 
           
-          // 引き出しに取っ手と写真をしまって、リストにペタッ！
           detailsBox.appendChild(photoSummary);
           detailsBox.appendChild(imgElement);
           newItem.appendChild(detailsBox);
