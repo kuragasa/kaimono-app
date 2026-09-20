@@ -16,11 +16,11 @@
 
   <!-- ↓ここから下が「保管庫と通信する魔法」です！↓ -->
   <script type="module">
-    // 1. Firebaseのエンジンと、共有ノート(Firestore)を使うための専用のペンを準備します
+    // 1. Firebaseのエンジンと、今回は「ノートを見張る魔法（onSnapshot）」を追加で準備します！
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
-    // 2. 先ほど見せていただいた「あなたの保管庫の合い鍵」です
+    // 2. あなたの保管庫の合い鍵
     const firebaseConfig = {
       apiKey: "AIzaSyCu1fY1gC6QlBrtB4n-jxZCRreD81xwKq4",
       authDomain: "kaimono-app-1fb70.firebaseapp.com",
@@ -32,41 +32,47 @@
 
     // 3. アプリと保管庫を接続！
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app); // ノートを開く！
+    const db = getFirestore(app);
 
-    // 4. 画面のボタンや入力枠を見つけて準備
+    // 4. 画面のボタンや棚を見つけて準備
     const button = document.getElementById("addButton");
     const input = document.getElementById("itemInput");
     const list = document.getElementById("wantList");
 
+    // ★今回の新しい魔法：ノートを24時間見張るカメラ（onSnapshot）！★
+    // アプリを開いた時や、ノートに新しい書き込みがあった瞬間に、自動でここが動きます。
+    onSnapshot(collection(db, "wantItems"), (snapshot) => {
+      
+      // まず、今画面にある棚を一度「空っぽ」にして綺麗にお掃除します
+      list.innerHTML = "";
+
+      // ノートの中にある「付箋」を1枚ずつ取り出して、画面の棚に貼っていく作業
+      snapshot.forEach((doc) => {
+        const data = doc.data(); // 付箋に書かれた文字を取り出す
+        
+        const newItem = document.createElement("li"); // 新しい画面用の付箋を作る
+        newItem.textContent = data.name; // 文字を書き込む
+        list.appendChild(newItem); // 画面の棚に貼る！
+      });
+      
+    });
+
     // 5. ボタンが「カチッ」と押されたら…
     button.addEventListener("click", async function() {
-      
       const text = input.value;
       if (text === "") { return; } // 空っぽなら何もしない
 
       try {
-        // ★ここが最大の魔法！「共有ノート」に文字を書き込みます★
+        // クラウドのノートに書き込む！（書き込むと、上の「見張るカメラ」が自動で気づいて画面を更新してくれます）
         await addDoc(collection(db, "wantItems"), {
           name: text
         });
-
-        // 画面のリストにも付箋を貼って見せる
-        const newItem = document.createElement("li");
-        newItem.textContent = text;
-        list.appendChild(newItem);
-
+        
         // 入力枠をお掃除
         input.value = "";
-        
-        // 成功したことをお知らせ！
-        alert("クラウドのノートに保存しました！🎉");
-
       } catch (error) {
-        // もし失敗したらエラーを教えてくれる
         alert("保存に失敗しちゃいました…。");
       }
-      
     });
   </script>
 
