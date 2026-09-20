@@ -19,6 +19,38 @@
   <!-- 将来、ここに買いたいものがズラッと並びます（今はまだ空っぽの棚です） -->
   <ul id="wantList">
   </ul>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>買いたいものアプリ</title>
+</head>
+<body>
 
+  <h1>私の買いたいものリスト📝</h1>
+  
+  <input type="text" id="itemInput" placeholder="何を買う？">
+  <button id="addButton">リストに追加！</button>
+
+  <ul id="wantList">
+  </ul>
+
+  <!-- ↓ここから下が「動かすための魔法（JavaScript）」です！↓ -->
+  <script>
+    // 1. 「リストに追加！」ボタンを画面の中から見つけて、準備する
+    const button = document.getElementById("addButton");
+
+    // 2. ボタンが「カチッ」とクリックされたら、この中の指示を実行してね！
+    button.addEventListener("click", function() {
+      
+      // 3. 画面に「押されたよ！」という小さなメッセージ（ポップアップ）を出す
+      alert("ボタンが押されました！アプリが動いてます！");
+      
+    });
+  </script>
+  <!-- ↑魔法はここまで！↑ -->
+
+</body>
+</html>
 </body>
 </html>
