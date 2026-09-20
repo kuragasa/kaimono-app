@@ -147,7 +147,6 @@
     let currentTargetName = "";
     let currentTargetId = "";
 
-    // ★これから買うものを見張るカメラ★
     onSnapshot(collection(db, "wantItems"), (snapshot) => {
       list.innerHTML = ""; 
 
@@ -164,35 +163,33 @@
         textSpan.style.fontWeight = "bold"; 
         newItem.appendChild(textSpan);
 
-        // 「買いました！📸」ボタン
         const buyButton = document.createElement("button");
         buyButton.textContent = "買いました！📸";
         
-        // ★ここが新しくなりました！店員さんのように質問します★
         buyButton.addEventListener("click", async function() {
           currentTargetName = data.name; 
           currentTargetId = noteId;      
           
-          // レジの店員さんのように確認画面を出します！
           const wantPhoto = confirm("「" + data.name + "」を買ったんですね！🎉\n一緒に写真も保存しますか？\n\n【OK】写真を撮る📷\n【キャンセル】写真なしで移動✨");
 
           if (wantPhoto) {
-            // 「OK」が押されたら、今まで通りカメラを起動！
             cameraInput.click(); 
           } else {
-            // 「キャンセル」が押されたら、写真なしですぐにお引っ越し！
+            // ★日付スタンプの魔法！★ スマホの時計を見て、今日の日付（例：2026/9/20）を作ります
+            const today = new Date().toLocaleDateString('ja-JP'); 
+
             try {
               await addDoc(collection(db, "boughtItems"), {
-                name: currentTargetName // ← 写真（image）は付けずに名前だけ保存
+                name: currentTargetName,
+                date: today // ← ここで日付スタンプを一緒に保存！
               });
-              await deleteDoc(doc(db, "wantItems", currentTargetId)); // 古いリストからはがす
+              await deleteDoc(doc(db, "wantItems", currentTargetId)); 
             } catch (error) {
               alert("保存に失敗しちゃいました…。");
             }
           }
         });
 
-        // ゴミ箱ボタン（前回作ったものです！）
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "削除🗑️";
         deleteButton.className = "delete-btn"; 
@@ -210,7 +207,6 @@
       });
     });
 
-    // 隠しカメラで写真が選ばれた時の魔法
     cameraInput.addEventListener("change", function(event) {
       const file = event.target.files[0];
       if (!file) return; 
@@ -229,10 +225,14 @@
           
           const base64Image = canvas.toDataURL("image/jpeg", 0.7);
 
+          // ★写真を選ぶ場合も、日付スタンプを作ります！★
+          const today = new Date().toLocaleDateString('ja-JP');
+
           try {
             await addDoc(collection(db, "boughtItems"), {
               name: currentTargetName,
-              image: base64Image
+              image: base64Image,
+              date: today // ← 写真と一緒に日付スタンプも保存！
             });
             await deleteDoc(doc(db, "wantItems", currentTargetId));
             cameraInput.value = "";
@@ -245,7 +245,6 @@
       reader.readAsDataURL(file);
     });
 
-    // ★もう買ったものを見張るカメラ★
     onSnapshot(collection(db, "boughtItems"), (snapshot) => {
       boughtList.innerHTML = ""; 
 
@@ -260,7 +259,16 @@
         textSpan.style.fontWeight = "bold";
         newItem.appendChild(textSpan);
         
-        // もし写真（シール）が貼ってあったらだけ、写真の引き出しを作る！
+        // ★日付スタンプが押されていれば、画面に表示する魔法★
+        if (data.date) {
+          const dateSpan = document.createElement("div");
+          dateSpan.textContent = "📅 購入日: " + data.date;
+          dateSpan.style.fontSize = "13px"; // 少し小さめの文字で
+          dateSpan.style.color = "#999999"; // 少し薄いグレー色にして控えめに
+          dateSpan.style.marginTop = "5px"; // 上の文字との隙間
+          newItem.appendChild(dateSpan);
+        }
+
         if (data.image) {
           const detailsBox = document.createElement("details");
           const photoSummary = document.createElement("summary");
@@ -276,7 +284,6 @@
           newItem.appendChild(detailsBox);
         }
 
-        // 購入済みのリストのゴミ箱ボタン
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "削除🗑️";
         deleteButton.className = "delete-btn";
@@ -294,7 +301,6 @@
       });
     });
 
-    // リストに追加ボタン
     button.addEventListener("click", async function() {
       const text = input.value;
       if (text === "") { return; }
