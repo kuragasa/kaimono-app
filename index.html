@@ -12,38 +12,60 @@
   <button id="addButton">リストに追加！</button>
 
   <!-- 買いたいものが並ぶ棚 -->
-  <ul id="wantList">
-  </ul>
+  <ul id="wantList"></ul>
 
-  <!-- ↓動かすための魔法（JavaScript）↓ -->
-  <script>
-    // 1. 使うものを画面の中から見つけて準備する
+  <!-- ↓ここから下が「保管庫と通信する魔法」です！↓ -->
+  <script type="module">
+    // 1. Firebaseのエンジンと、共有ノート(Firestore)を使うための専用のペンを準備します
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    // 2. 先ほど見せていただいた「あなたの保管庫の合い鍵」です
+    const firebaseConfig = {
+      apiKey: "AIzaSyCu1fY1gC6QlBrtB4n-jxZCRreD81xwKq4",
+      authDomain: "kaimono-app-1fb70.firebaseapp.com",
+      projectId: "kaimono-app-1fb70",
+      storageBucket: "kaimono-app-1fb70.firebasestorage.app",
+      messagingSenderId: "340367566014",
+      appId: "1:340367566014:web:127208a9b4ef5ae74f6aef"
+    };
+
+    // 3. アプリと保管庫を接続！
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app); // ノートを開く！
+
+    // 4. 画面のボタンや入力枠を見つけて準備
     const button = document.getElementById("addButton");
-    const input = document.getElementById("itemInput"); // 入力する枠
-    const list = document.getElementById("wantList");   // 並べる棚
+    const input = document.getElementById("itemInput");
+    const list = document.getElementById("wantList");
 
-    // 2. ボタンが「カチッ」と押されたら、以下の指示を実行してね！
-    button.addEventListener("click", function() {
+    // 5. ボタンが「カチッ」と押されたら…
+    button.addEventListener("click", async function() {
       
-      // 3. 入力枠に書かれた「文字」を取り出す
       const text = input.value;
-      
-      // （もし文字が空っぽのままボタンが押されたら、何もしないでストップ！）
-      if (text === "") {
-        return;
+      if (text === "") { return; } // 空っぽなら何もしない
+
+      try {
+        // ★ここが最大の魔法！「共有ノート」に文字を書き込みます★
+        await addDoc(collection(db, "wantItems"), {
+          name: text
+        });
+
+        // 画面のリストにも付箋を貼って見せる
+        const newItem = document.createElement("li");
+        newItem.textContent = text;
+        list.appendChild(newItem);
+
+        // 入力枠をお掃除
+        input.value = "";
+        
+        // 成功したことをお知らせ！
+        alert("クラウドのノートに保存しました！🎉");
+
+      } catch (error) {
+        // もし失敗したらエラーを教えてくれる
+        alert("保存に失敗しちゃいました…。");
       }
-      
-      // 4. 新しい「付箋（リストの項目）」を1枚作る
-      const newItem = document.createElement("li");
-      
-      // 5. その付箋に、さっき取り出した「文字」を書き込む
-      newItem.textContent = text;
-      
-      // 6. 出来上がった付箋を、「棚」にペタッと貼る
-      list.appendChild(newItem);
-      
-      // 7. 次の入力がしやすいように、入力枠の中身を消してお掃除する
-      input.value = "";
       
     });
   </script>
